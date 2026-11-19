@@ -1,5 +1,17 @@
 <p align="center">
-  <img src="docs/banner.png" alt="Code Mode MCP — un MCP para todos tus MCP" width="100%">
+  <img src="public/logo.svg" alt="" width="84" height="84">
+</p>
+
+<h1 align="center">Code Mode MCP</h1>
+
+<p align="center">
+  <b>Un MCP para todos tus MCP.</b><br>
+  Tu IA carga 3 herramientas chicas en vez de decenas, llama a las demás por código<br>
+  y solo le vuelve la respuesta: los resultados grandes nunca inundan la conversación.
+</p>
+
+<p align="center">
+  <code>npx github:DiegoT21/Code-Mode-MCP-</code>
 </p>
 
 <p align="center">

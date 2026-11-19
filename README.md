@@ -1,5 +1,17 @@
 <p align="center">
-  <img src="docs/banner.png" alt="Code Mode MCP — one MCP for all your MCPs" width="100%">
+  <img src="public/logo.svg" alt="" width="84" height="84">
+</p>
+
+<h1 align="center">Code Mode MCP</h1>
+
+<p align="center">
+  <b>One MCP for all your MCPs.</b><br>
+  Your AI loads 3 small tools instead of dozens, calls the rest through code,<br>
+  and only the answer comes back — big tool results never flood the chat.
+</p>
+
+<p align="center">
+  <code>npx github:DiegoT21/Code-Mode-MCP-</code>
 </p>
 
 <p align="center">

@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Source of docs/banner.png and docs/social-preview.png (rendered with Playwright). ?size=social for 1280x640. -->
+<!-- Source of docs/social-preview.png (rendered with Playwright at 1280x640, ?social). Upload it in GitHub → Settings → Social preview. -->
 <html><head><meta charset="utf-8"><style>
   * { box-sizing: border-box; margin: 0; }
   body { width: 1280px; height: 470px; font-family: 'Segoe UI Variable Display', 'Segoe UI', system-ui, sans-serif; background: #0f1513; color: #eef3f0; overflow: hidden; }
@@ -19,7 +19,7 @@
   .row h2 { font-size: 14px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #b3c4bd; margin-bottom: 12px; }
   .bar { height: 26px; border-radius: 7px; display: flex; align-items: center; padding: 0 12px; font: 600 15px/1 'Segoe UI', sans-serif; color: #10201b; }
   .classic { background: linear-gradient(90deg, #e09068, #c9703f); width: 100%; }
-  .code { background: linear-gradient(90deg, #8ee0c3, #6fbfa5); width: 14%; min-width: 92px; }
+  .code { background: linear-gradient(90deg, #8ee0c3, #6fbfa5); width: 7%; min-width: 92px; }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
   .chip { font: 500 13px/1 'Cascadia Code', Consolas, monospace; padding: 6px 9px; border-radius: 6px; background: #1d2724; color: #c2d2cb; }
   .chip.gw { background: #1f3a31; color: #a8e6cf; }
@@ -34,18 +34,18 @@
   <div>
     <div class="brand"><img src="../public/logo.svg" alt=""><span>Code Mode MCP</span></div>
     <h1>One MCP for <em>all</em> your MCPs.</h1>
-    <p class="sub">Your AI loads 3 small tools instead of dozens, calls the rest through code, and only the answer comes back. Up to 90% fewer tokens.</p>
+    <p class="sub">Your AI loads 3 small tools instead of dozens, calls the rest through code, and only the answer comes back. Big tool results never flood the chat.</p>
     <div class="cmd"><b>$</b> npx github:DiegoT21/Code-Mode-MCP-</div>
   </div>
   <div class="viz">
     <div class="row">
-      <h2>Classic MCP · every definition + every full result</h2>
-      <div class="bar classic">≈ 6,500 tokens</div>
-      <div class="chips"><span class="chip">context7 ×2</span><span class="chip">memory ×9</span><span class="chip">everything ×16</span><span class="chip">sequential-thinking</span></div>
+      <h2>Direct tool calls · checking a web page</h2>
+      <div class="bar classic">≈ 3,400 tokens</div>
+      <div class="chips"><span class="chip">browser snapshot of the whole page</span></div>
     </div>
     <div class="row">
-      <h2>Code Mode · one gateway, code does the work</h2>
-      <div class="bar code">≈ 620</div>
+      <h2>Code Mode · the same check</h2>
+      <div class="bar code">≈ 210</div>
       <div class="chips"><span class="chip gw">search_tools</span><span class="chip gw">describe_tool</span><span class="chip gw">run_code</span></div>
     </div>
   </div>
