@@ -156,10 +156,12 @@ No: it gets the same tools, found on demand. Models are very good at writing sho
 calls in one script is often more reliable than many separate tool calls.
 
 **Is it safe?**
-Everything runs locally; the panel only listens on `127.0.0.1`. Every config file is backed up before it is
-touched and only its MCP section changes. Keys stay in `~/.code-mode-mcp/servers.json`, readable only by your
-user, and are never shown. `run_code` runs without `require`, `process` or file access — but it is not a
-security sandbox: it can call your tools, exactly like your AI already could.
+Everything runs locally. The panel only listens on `127.0.0.1`, rejects requests not addressed to `localhost`
+(so a website cannot reach it through DNS rebinding) and refuses changes coming from other pages. Every config
+file is backed up before it is touched and only its MCP section changes. Keys stay in
+`~/.code-mode-mcp/servers.json` in your user folder and are never shown. `run_code` is **not** a security
+sandbox: it is handed only `mcp`, `browser`, `blender` and `log`, but determined code can get out of that
+context. Treat it like your AI's own terminal — it runs with your user's permissions.
 
 **When should a server stay direct?**
 When the AI must look and decide step by step in real time (a live 3D scene, an interactive browser session).

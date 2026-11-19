@@ -86,6 +86,9 @@ const body = (req) =>
       }
     })
   })
+// Requests must be addressed to this computer by name: blocks DNS rebinding (a website pointing its own
+// domain at 127.0.0.1 to read the panel)
+const localHost = (req) => [`localhost:${PORT}`, `127.0.0.1:${PORT}`, `[::1]:${PORT}`].includes(String(req.headers.host).toLowerCase())
 // Only this page may change things (another website open in the browser cannot)
 const ownRequest = (req) => req.headers['x-panel'] === '1' && (!req.headers.origin || [`http://localhost:${PORT}`, `http://127.0.0.1:${PORT}`].includes(req.headers.origin))
 
@@ -131,6 +134,10 @@ const routes = {
 export function startPanel({ open = true } = {}) {
   ensureHome()
   const server = http.createServer(async (req, res) => {
+    if (!localHost(req)) {
+      res.writeHead(403)
+      return res.end('Forbidden')
+    }
     const url = new URL(req.url, `http://${req.headers.host}`)
     try {
       if (url.pathname.startsWith('/api/')) {

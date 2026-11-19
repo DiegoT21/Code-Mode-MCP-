@@ -154,10 +154,12 @@ No: tiene las mismas herramientas, solo que las busca cuando las necesita. Los m
 corto, y hacer varias llamadas en un solo script suele ser más confiable que muchas llamadas sueltas.
 
 **¿Es seguro?**
-Todo corre en tu computadora; el panel solo escucha en `127.0.0.1`. Cada archivo de configuración se respalda
-antes de tocarlo y solo cambia su parte de MCP. Las claves quedan en `~/.code-mode-mcp/servers.json`, que solo tu
-usuario puede leer, y nunca se muestran. `run_code` corre sin `require`, `process` ni acceso a archivos, pero no es
-una caja fuerte: puede llamar a tus herramientas, igual que ya podía tu IA.
+Todo corre en tu computadora. El panel solo escucha en `127.0.0.1`, rechaza pedidos que no vayan dirigidos a
+`localhost` (así una web no puede alcanzarlo con «DNS rebinding») y no acepta cambios que vengan de otras páginas.
+Cada archivo de configuración se respalda antes de tocarlo y solo cambia su parte de MCP. Las claves quedan en
+`~/.code-mode-mcp/servers.json`, en tu carpeta de usuario, y nunca se muestran. `run_code` **no** es una caja
+fuerte: solo recibe `mcp`, `browser`, `blender` y `log`, pero un código decidido puede salirse de ese contexto.
+Trátalo como la terminal de tu IA: corre con los permisos de tu usuario.
 
 **¿Cuándo conviene dejar un servidor directo?**
 Cuando la IA tiene que mirar y decidir paso a paso en tiempo real (una escena 3D en vivo, una sesión de navegador
