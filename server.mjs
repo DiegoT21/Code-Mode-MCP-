@@ -9,7 +9,7 @@ import { APP_DIR, PATHS, PORT, ensureHome, readJson, writeJson, loadServers, loa
 import { inspect } from './lib/mcp.mjs'
 import { detect, CLIENTS, listSkills } from './lib/clients.mjs'
 import { plan, apply, undo, status } from './lib/setup.mjs'
-import { Runner } from './lib/runner.mjs'
+import { Runner, setGatewayTokens } from './lib/runner.mjs'
 import { usage } from './lib/usage.mjs'
 import { findBlender, listScenes } from './lib/blender.mjs'
 import { tokens } from './lib/tokens.mjs'
@@ -19,6 +19,7 @@ import { toolCost } from './lib/mcp.mjs'
 const PUBLIC = path.join(APP_DIR, 'public')
 const INVENTORY_CACHE = path.join(PATHS.cache, 'inventory.json')
 const runner = new Runner()
+setGatewayTokens(GATEWAY_TOOLS.reduce((a, x) => a + toolCost(x), 0))
 
 // ── Inventory ─────────────────────────────────────────────────────────────────────────────────────
 let inventory = null

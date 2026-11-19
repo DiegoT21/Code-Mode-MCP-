@@ -364,3 +364,6 @@ code.ruta { display: block; font-size: 11.5px; color: var(--tenue); background: 
   .antes-despues .valor { font-size: 18px; }
   .antes-despues > div:not(.flecha) { padding: 10px; }
 }
+
+.editor > .campo:not(.crece) { flex: none; }
+.barras { align-content: start; }

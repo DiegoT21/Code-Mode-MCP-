@@ -1,141 +1,196 @@
-# Code Mode MCP
+<p align="center">
+  <img src="docs/banner.png" alt="Code Mode MCP — one MCP for all your MCPs" width="100%">
+</p>
 
-**One MCP for all your MCPs.** A local panel + gateway that moves every MCP server your AI uses behind a
-single server with three tools. Your AI stops loading dozens of tool definitions and stops receiving huge
-tool results: it writes a little code that calls the tools and gets back only what it needs.
+<p align="center">
+  <a href="https://github.com/DiegoT21/Code-Mode-MCP-/releases/latest"><img alt="Release" src="https://img.shields.io/github/v/release/DiegoT21/Code-Mode-MCP-?color=2f6f5e"></a>
+  <a href="https://github.com/DiegoT21/Code-Mode-MCP-/actions/workflows/test.yml"><img alt="Tests" src="https://github.com/DiegoT21/Code-Mode-MCP-/actions/workflows/test.yml/badge.svg"></a>
+  <img alt="Node 20+" src="https://img.shields.io/badge/node-20%2B-2f6f5e">
+  <img alt="Windows · macOS · Linux" src="https://img.shields.io/badge/Windows%20%C2%B7%20macOS%20%C2%B7%20Linux-supported-2f6f5e">
+  <a href="LICENSE"><img alt="MIT" src="https://img.shields.io/badge/license-MIT-2f6f5e"></a>
+</p>
 
-[Leer en español](README.es.md)
+<p align="center">
+  <b>Works with</b> Claude Code · Claude Desktop · Cursor · VS Code · Windsurf · Gemini CLI
+  <br>
+  <a href="README.es.md">Leer en español</a>
+</p>
+
+---
+
+## Your AI is paying for tools it never uses
+
+Every MCP server you connect sends **all its tool definitions** into your AI's context, on every
+conversation. Ten servers can mean 100+ tools and tens of thousands of tokens before you type a word.
+Then every tool result lands in the chat **in full** — a whole web page, a 3,000-line document, a giant
+JSON — even when the AI only needed one number.
+
+That is slower, more expensive, and leaves less room for the AI to think.
+
+## Code Mode fixes it with one button
+
+**Code Mode MCP** puts all your MCP servers behind a single gateway with three tiny tools. Your AI
+searches for the tool it needs, writes a few lines of code that call it, and **only the answer comes back**.
+Intermediate data stays on your computer.
 
 ```
 npx github:DiegoT21/Code-Mode-MCP-
 ```
 
-That opens the panel at http://localhost:4777. Press **Setup → Move into Code Mode**. Done.
+That opens a local panel. Press **Setup → Move into Code Mode**. It finds the MCP config of every AI app
+on your computer, moves the servers into the panel, and leaves each app with one server: the gateway.
+Backed up, and undoable with one click.
 
----
+<p align="center"><img src="docs/screenshots/setup.png" alt="Setup: one button moves every MCP server into Code Mode" width="88%"></p>
 
-## Why
+## Measured, not promised
 
-Every MCP server you connect costs tokens twice:
+Same task, same servers (context7, memory, everything, sequential-thinking). Classic = what the AI loads and
+receives with normal MCP; Code Mode = the gateway's 3 tools + the code + what it returns.
 
-1. **Definitions.** The name, description and parameters of every tool sit in the AI's context. A server
-   with 26 well-documented tools can weigh 6,000 tokens before you ask anything.
-2. **Results.** With classic MCP every result enters the conversation in full: a web page, a document, a
-   long list — even when the AI only needed one number.
+| Task | Classic MCP | Code Mode | Saved |
+|---|---:|---:|---:|
+| Look up docs and keep only the relevant lines (2 calls) | ≈ 8,049 tokens | ≈ 2,272 | **72%** |
+| Several calls, one small answer (4 calls) | ≈ 6,772 | ≈ 1,154 | **83%** |
+| Check a web page on mobile (browser in code) | ≈ 6,490 | ≈ 624 | **90%** |
 
-**Code mode** fixes both. The AI sees one small gateway (`search_tools`, `describe_tool`, `run_code`), finds the
-tool it needs, and runs a short script that calls it, filters and returns a small answer. Intermediate data
-stays on your computer. In our tests: 36% fewer tokens on a docs lookup, 94% on a 3D scene query, 97% on a
-web page check.
+The more servers you have and the bigger their results, the bigger the saving. The panel measures every
+run, so you can see it on your own tools.
 
-## What the Setup button does
+## How it works
 
-1. Finds the MCP config of the AI apps on your computer: **Claude Code, Claude Desktop, Cursor, VS Code,
-   Windsurf, Gemini CLI**. Shows each server (never the values of keys or tokens).
-2. You pick which servers to move (all by default). One click:
-   - backs up every config file to `~/.code-mode-mcp/backups`,
-   - moves the servers into the panel (`~/.code-mode-mcp/servers.json`),
-   - leaves each app with one server, `code-mode` (the gateway). Nothing else in the file changes.
-   - optionally installs the `code-mode` skill in Claude Code, which teaches it to work in code.
-3. Restart your AI apps. **Undo everything** puts all the servers back where they were.
+<p align="center"><img src="docs/screenshots/how-it-works.png" alt="Classic MCP vs code mode" width="88%"></p>
 
-Want a server to stay direct (for very interactive work, like a live 3D scene)? Untick it.
+The gateway gives your AI three tools:
 
-## The gateway's three tools
-
-| Tool | What it does |
+| Tool | |
 |---|---|
-| `search_tools(query)` | Finds tools across every server behind the gateway. Empty query lists the servers. |
-| `describe_tool(server, tool)` | Full description and input schema of one tool. |
-| `run_code(code)` | Runs JavaScript (top-level `await`) and returns only what the code returns. |
-
-Inside `run_code`:
+| `search_tools(query)` | Find tools across every server behind the gateway |
+| `describe_tool(server, tool)` | See one tool's parameters |
+| `run_code(code)` | Run JavaScript that calls the tools and returns only what matters |
 
 ```js
-// call any tool of any server
-const issues = await mcp.call('github', 'list_issues', { repo: 'owner/name', state: 'open' })
-return issues.filter((i) => i.labels.some((l) => l.name === 'bug')).map((i) => i.title).slice(0, 10)
+// What your AI writes inside run_code
+const issues = await mcp.call('github', 'list_issues', { repo: 'acme/web', state: 'open' })
+return issues
+  .filter((i) => i.labels.some((l) => l.name === 'bug'))
+  .map((i) => `#${i.number} ${i.title}`)
+  .slice(0, 10)          // ← only these 10 lines reach the conversation
 ```
 
-- `mcp.call(server, tool, args)`, `mcp.callRaw(...)`, `mcp.search(query)`, `mcp.servers()`
-- `browser.page({ screen: 'mobile' | 'tablet' | 'desktop' })` → a Playwright page on your installed Chrome
-  (or Edge), closed at the end; `browser.timings()` → TTFB, FCP, LCP, CLS, weight. **Replaces a browser MCP.**
-- `blender.run(sceneFile, pythonCode)` → runs Python in Blender without opening it (optional, if Blender is installed)
-- `log(...)` → extra lines in the answer
-- Return an MCP image object (`{ type: 'image', data, mimeType }`) when the AI really needs to see something.
+Also built in, no extra MCP needed:
 
-## The panel
+- **Browser in code** — `browser.page({ screen: 'mobile' })` drives your installed Chrome with Playwright and
+  `browser.timings()` gives TTFB / FCP / LCP / CLS. Replaces a browser MCP that would dump the page tree into the chat.
+- **Blender in batch** — `blender.run(scene, python)` runs Python in Blender without opening it (if installed).
+- **Images when they matter** — return an MCP image object and the AI gets the picture.
 
-| Tab | |
-|---|---|
-| **Setup** | The one button above, Blender path, Undo. |
-| **Inventory** | Servers behind the gateway with every tool, its parameters and its token weight; servers still direct in each app; Claude Code skills; change log. |
-| **Usage** | Real token usage of Claude Code on this computer (from its local logs): equivalent cost, cache savings, per day, per project, which tools put the most tokens in the context. |
-| **Sandbox** | Run exactly what `run_code` runs, and compare its tokens with classic MCP. |
-| **History** | Every `run_code` (from your AI or the sandbox) with duration, result, errors and tokens. |
-| **How it works** | Short explanations, in English and Spanish. |
+## A panel to see where your tokens go
 
-## Command line
+<table>
+<tr>
+<td width="50%"><img src="docs/screenshots/inventory-tools.png" alt="Inventory: every tool with its parameters and token weight"></td>
+<td width="50%"><img src="docs/screenshots/usage.png" alt="Usage: real Claude Code token usage per day, project and tool"></td>
+</tr>
+<tr>
+<td><b>Inventory</b> — every server and tool, its parameters and how many tokens it would cost loaded directly.</td>
+<td><b>Usage</b> — real Claude Code usage from its local logs: cost per day and project, cache savings, and which tools flood your context.</td>
+</tr>
+<tr>
+<td><img src="docs/screenshots/sandbox.png" alt="Sandbox: run code mode and compare tokens"></td>
+<td><img src="docs/screenshots/history.png" alt="History of every run"></td>
+</tr>
+<tr>
+<td><b>Sandbox</b> — run exactly what your AI runs and compare it with classic MCP.</td>
+<td><b>History</b> — every <code>run_code</code> from your AI, with duration, result, errors and tokens saved.</td>
+</tr>
+</table>
+
+English and Spanish, light and dark mode, and it fits the window without scrolling.
+
+## Quick start
 
 ```bash
-npx github:DiegoT21/Code-Mode-MCP- <command>     # or: npm i -g github:DiegoT21/Code-Mode-MCP-  then  code-mode-mcp <command>
+npx github:DiegoT21/Code-Mode-MCP-
 ```
+
+1. The panel opens at http://localhost:4777.
+2. **Setup** shows the AI apps and MCP servers it found. Untick any server you want to keep direct.
+3. Press the button, then restart your AI apps (or open a new session).
+4. Ask your AI anything that uses your tools. Watch the savings in **History**.
+
+Changed your mind? **Setup → Undo everything** puts every server back where it was.
+
+<details>
+<summary><b>Command line</b></summary>
 
 | Command | |
 |---|---|
-| *(none)* | Open the panel |
-| `setup` / `setup --apply` / `setup --undo` | Same as the Setup button, from the terminal |
-| `add <name> --config '<json>' [--env NAME]` | Test a server and add it behind the gateway. Keys: `--env NAME` takes the value from your terminal; never put them in `--config`. |
+| `code-mode-mcp` | Open the panel |
+| `setup` · `setup --apply` · `setup --undo` | The Setup button, from the terminal |
+| `add <name> --config '<json>' [--env NAME]` | Test a server and add it behind the gateway. Keys come from your terminal with `--env`, never from the command line |
 | `remove <name>` | Remove a server (backup kept) |
-| `list` | Servers behind the gateway, tools and token weight |
-| `skill-add <folder>` / `skill-remove <name>` | Claude Code skills |
-| `run <file.js>` | Run code like `run_code` and print the result |
-| `check <url> [--screen mobile]` | Quick page check with the installed Chrome |
+| `list` | Servers, tools and token weight |
+| `skill-add <folder>` · `skill-remove <name>` | Claude Code skills |
+| `run <file.js>` | Run code like `run_code` |
+| `check <url> [--screen mobile]` | Quick page check with your Chrome |
 | `usage [--days 7]` | Claude Code token usage |
-| `gateway` | The MCP server itself (this is what your AI apps start) |
+| `gateway` | The MCP server itself (what your AI apps start) |
 
-## Desktop app
+Use them as `npx github:DiegoT21/Code-Mode-MCP- <command>`, or install once with
+`npm i -g github:DiegoT21/Code-Mode-MCP-`.
+</details>
 
-Optional. Installers for Windows, macOS and Linux are built by GitHub Actions and attached to
-[Releases](https://github.com/DiegoT21/Code-Mode-MCP-/releases). It is the same panel in its own window; it
-still needs Node.js. The installers are **not code-signed**: Windows Smart App Control can block them and
-macOS will warn. If that happens, use `npx` — it does the same thing.
+<details>
+<summary><b>Desktop app</b></summary>
+
+Installers for Windows, macOS and Linux are on the [Releases](https://github.com/DiegoT21/Code-Mode-MCP-/releases/latest)
+page. Same panel, in its own window; it still needs Node.js 20+. They are not code-signed, so Windows Smart App
+Control or macOS Gatekeeper may block or warn. `npx` does exactly the same without an installer.
+</details>
+
+## FAQ
+
+**Does my AI get worse at using tools?**
+No: it gets the same tools, found on demand. Models are very good at writing short code, and doing several
+calls in one script is often more reliable than many separate tool calls.
+
+**Is it safe?**
+Everything runs locally; the panel only listens on `127.0.0.1`. Every config file is backed up before it is
+touched and only its MCP section changes. Keys stay in `~/.code-mode-mcp/servers.json`, readable only by your
+user, and are never shown. `run_code` runs without `require`, `process` or file access — but it is not a
+security sandbox: it can call your tools, exactly like your AI already could.
+
+**When should a server stay direct?**
+When the AI must look and decide step by step in real time (a live 3D scene, an interactive browser session).
+Untick it in Setup.
+
+**What about claude.ai connectors (Gmail, Drive…)?**
+They live in your claude.ai account and cannot be moved to a local gateway.
+
+**How accurate are the numbers?**
+Token counts are estimates (≈ 3.5 characters per token) — good for comparing, not for billing. The Usage
+cost comes from Claude Code's own logs.
 
 ## Requirements
 
-- Node.js 20 or newer
-- Google Chrome or Microsoft Edge (for the browser tools)
-- Blender (optional)
-
-## Safety and privacy
-
-- Everything runs on your computer. The panel listens on `127.0.0.1` only and refuses changes from other websites.
-- Setup backs up each config file before touching it and only changes its MCP section. Undo restores it.
-- Keys and tokens of your servers are kept in `~/.code-mode-mcp/servers.json` (readable only by your user)
-  and never shown in the panel.
-- `run_code` runs in a separate JavaScript context without `require`, `process` or file access, but it is
-  **not a security sandbox**: it can call any tool of your servers, like your AI already could.
-- The Usage tab reads Claude Code's local logs and stores only numbers, never the text of your conversations.
+Node.js 20+ · Google Chrome or Microsoft Edge (for the browser tools) · Blender (optional)
 
 ## Uninstall
 
-Press **Undo everything** in Setup (or `npx github:DiegoT21/Code-Mode-MCP- setup --undo`), then delete
-`~/.code-mode-mcp`.
+**Setup → Undo everything** (or `npx github:DiegoT21/Code-Mode-MCP- setup --undo`), then delete `~/.code-mode-mcp`.
 
-## Limits
+## Contributing
 
-- Token numbers are estimates (≈ 3.5 characters per token), good for comparing. Usage cost comes from Claude Code.
-- Usage only covers Claude Code; the other apps do not keep local token logs.
-- Connectors of claude.ai (Gmail, Drive…) live in your claude.ai account and cannot be moved here.
-
-## Development
+Issues and pull requests are welcome — especially support for more AI apps.
 
 ```bash
 git clone https://github.com/DiegoT21/Code-Mode-MCP-.git && cd Code-Mode-MCP-
 npm install
-npm test            # setup, gateway and undo against fake configs (needs network for npx)
-npm start           # the panel
-cd escritorio && npm install && npm run dev   # desktop app (needs Rust)
+npm test     # Setup, gateway and Undo against fake configs
+npm start    # the panel
 ```
 
-MIT License.
+If Code Mode saves you tokens, a ⭐ helps other people find it.
+
+MIT License
