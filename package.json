@@ -1,0 +1,47 @@
+{
+  "name": "code-mode-mcp",
+  "version": "1.0.0",
+  "description": "One MCP for all your MCPs: a local panel + gateway that lets your AI call tools through code and spend far fewer tokens.",
+  "type": "module",
+  "bin": {
+    "code-mode-mcp": "bin/code-mode-mcp.mjs"
+  },
+  "main": "server.mjs",
+  "scripts": {
+    "start": "node bin/code-mode-mcp.mjs",
+    "gateway": "node bin/code-mode-mcp.mjs gateway",
+    "test": "node --test test/*.test.mjs"
+  },
+  "files": [
+    "bin",
+    "lib",
+    "public",
+    "examples",
+    "skills",
+    "server.mjs",
+    "README.md",
+    "README.es.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "playwright-core": "^1.65.1"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "code-mode",
+    "claude",
+    "cursor",
+    "tokens",
+    "gateway"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DiegoT21/Code-Mode-MCP-.git"
+  },
+  "license": "MIT"
+}

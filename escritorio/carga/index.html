@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Code Mode MCP</title>
+  <style>
+    :root { --fondo: #f6f5f1; --texto: #1d211f; --tenue: #66706b; --acento: #2f6f5e; --borde: #e2dfd6; --error: #b23b35; }
+    @media (prefers-color-scheme: dark) { :root { --fondo: #141716; --texto: #e7eae8; --tenue: #9aa39e; --acento: #6fbfa5; --borde: #313734; --error: #ec8a84; } }
+    html, body { height: 100%; margin: 0; }
+    body { display: grid; place-items: center; background: var(--fondo); color: var(--texto); font: 15px/1.5 'Segoe UI', system-ui, sans-serif; }
+    .box { text-align: center; max-width: 440px; padding: 24px; }
+    svg { width: 52px; height: 52px; }
+    h1 { font-size: 20px; margin: 14px 0 4px; }
+    p { color: var(--tenue); margin: 0; }
+    .spin { width: 18px; height: 18px; margin: 18px auto 0; border: 2px solid var(--borde); border-top-color: var(--acento); border-radius: 50%; animation: g 0.8s linear infinite; }
+    @keyframes g { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+    .error { color: var(--error); margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="f" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3a8a73"/><stop offset="1" stop-color="#1d4f42"/></linearGradient></defs><rect width="64" height="64" rx="15" fill="url(#f)"/><g stroke="#fff" stroke-width="3.6" stroke-linecap="round"><path d="M32 33 L17 19M32 33 L47 19M32 33 L32 50"/></g><circle cx="17" cy="19" r="6" fill="#a8e6cf"/><circle cx="47" cy="19" r="6" fill="#a8e6cf"/><circle cx="32" cy="50" r="6" fill="#a8e6cf"/><circle cx="32" cy="33" r="9" fill="#fff"/><circle cx="32" cy="33" r="3.6" fill="#2a6b59"/></svg>
+    <h1>Code Mode MCP</h1>
+    <p id="state"></p>
+    <div class="spin" id="spin"></div>
+  </div>
+  <script>
+    const es = (navigator.language || '').toLowerCase().startsWith('es')
+    document.getElementById('state').textContent = es ? 'Arrancando el panel…' : 'Starting the panel…'
+    window.showError = (text) => {
+      document.getElementById('spin').remove()
+      const p = document.getElementById('state')
+      p.className = 'error'
+      p.textContent = text
+    }
+  </script>
+</body>
+</html>

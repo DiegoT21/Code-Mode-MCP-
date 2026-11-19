@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="fondo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3a8a73"/>
+      <stop offset="1" stop-color="#1d4f42"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="url(#fondo)"/>
+  <!-- Centro (Claude) conectado a tres servidores -->
+  <g stroke="#ffffff" stroke-width="3.6" stroke-linecap="round">
+    <path d="M32 33 L17 19"/>
+    <path d="M32 33 L47 19"/>
+    <path d="M32 33 L32 50"/>
+  </g>
+  <circle cx="17" cy="19" r="6" fill="#a8e6cf"/>
+  <circle cx="47" cy="19" r="6" fill="#a8e6cf"/>
+  <circle cx="32" cy="50" r="6" fill="#a8e6cf"/>
+  <circle cx="32" cy="33" r="9" fill="#ffffff"/>
+  <circle cx="32" cy="33" r="3.6" fill="#2a6b59"/>
+</svg>
