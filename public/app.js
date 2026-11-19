@@ -224,7 +224,7 @@ function paintInventory() {
   $('#inv-lista').innerHTML = [
     listItem({ id: 'summary', name: t('inv.summary'), dot: 'acento', current: a }),
     `<div class="grupo-titulo">${t('inv.panel')}</div>`,
-    ...(panel.length ? panel.map((s) => listItem({ id: `mcp:${s.name}`, name: s.name, dot: s.state === 'connected' ? 'ok' : 'aviso', extra: `≈ ${short(s.tokensTotal)}`, below: s.state === 'connected' ? t('inv.tools', { n: s.tools.length }) : t('inv.unavailable'), current: a })) : [`<p class="tenue chico-texto" style="padding:4px 8px">${t('inv.empty')}</p>`]),
+    ...(panel.length ? panel.map((s) => listItem({ id: `mcp:${s.name}`, name: s.name, dot: s.state === 'connected' ? 'ok' : 'aviso', extra: `≈ ${short(s.tokensTotal)}`, below: s.state === 'connected' ? t('inv.tools', { n: s.tools.length }) : s.needsSignIn ? t('inv.needsSignIn') : t('inv.unavailable'), current: a })) : [`<p class="tenue chico-texto" style="padding:4px 8px">${t('inv.empty')}</p>`]),
     ...(direct.length ? [`<div class="grupo-titulo">${t('inv.apps')}</div>`, ...direct.map((c) => listItem({ id: `app:${c.id}`, name: c.name, dot: 'aviso', below: `${c.servers.filter((s) => !s.isGateway).length} MCP`, current: a }))] : []),
     `<div class="grupo-titulo">${t('inv.other')}</div>`,
     listItem({ id: 'code', name: t('inv.code'), dot: inv.codeTools.browser.ok ? 'ok' : 'aviso', current: a }),
@@ -282,7 +282,8 @@ function serverHeader(s) {
         ${s.envNames?.length ? `<span>${t('inv.vars')}: ${s.envNames.map((n) => `<code>${esc(n)}</code>`).join(' ')} ${t('inv.hidden')}</span>` : ''}
         ${s.headerNames?.length ? `<span>${t('inv.headers')}: ${s.headerNames.map((n) => `<code>${esc(n)}</code>`).join(' ')} ${t('inv.hidden')}</span>` : ''}
       </div>
-      ${s.state !== 'connected' ? `<p class="motivo">${esc(s.reason ?? '')}</p>` : ''}
+      ${s.state !== 'connected' && !s.needsSignIn ? `<p class="motivo">${esc(s.reason ?? '')}</p>` : ''}
+      ${s.type && s.type !== 'stdio' ? `<div class="fila" style="align-items:center">${s.signedIn ? `<span class="pastilla ok">${t('inv.signedIn')}</span><button class="boton secundario chico" type="button" data-signout="${esc(s.name)}">${t('inv.signOut')}</button>` : s.needsSignIn ? `<span class="tenue chico-texto">${t('inv.signInNote')}</span><button class="boton chico" type="button" data-signin="${esc(s.name)}">${t('inv.signIn')}</button>` : ''}</div>` : ''}
     </div>`
 }
 
@@ -329,7 +330,32 @@ function detailInstalls(list) {
     </tbody></table>` : `<p class="vacio">${t('inv.noInstalls')}</p>`}</div>`
 }
 
-document.addEventListener('click', (e) => {
+document.addEventListener('click', async (e) => {
+  const si = e.target.closest('[data-signin]')
+  const so = e.target.closest('[data-signout]')
+  if (si) {
+    si.disabled = true
+    try {
+      const r = await api('/api/oauth/start', { method: 'POST', body: JSON.stringify({ server: si.dataset.signin }) })
+      if (r.url) window.open(r.url, '_blank', 'width=620,height=760')
+      si.textContent = t('inv.waitingSignIn')
+      // Check until the server answers (up to 2 minutes)
+      for (let i = 0; i < 30; i++) {
+        await new Promise((ok) => setTimeout(ok, 4000))
+        const inv = await api('/api/inventory?refresh')
+        if (inv.panel.find((x) => x.name === si.dataset.signin)?.state === 'connected') break
+      }
+      loadInventory(false)
+    } catch (err) {
+      si.textContent = err.message
+    }
+    return
+  }
+  if (so) {
+    await api('/api/oauth/signout', { method: 'POST', body: JSON.stringify({ server: so.dataset.signout }) })
+    loadInventory(true)
+    return
+  }
   const b = e.target.closest('.mas')
   if (!b) return
   const td = b.closest('.desc')
@@ -365,7 +391,10 @@ function paintUsage(c) {
   }
   const period = c.dias ? t('usage.period', { a: shortDate(c.desde), b: shortDate(c.hasta) }) : t('usage.since')
   $('#con-nota').textContent = t('usage.note', { s: T.sesiones, m: num(T.mensajes), period })
-  const saved = Math.max(0, c.sandbox.clasico - c.sandbox.codigo)
+  const saved = Math.max(0, (c.sandbox.diferida ?? c.sandbox.clasico) - c.sandbox.codigo)
+  const ad = c.antesDespues
+  const fmt = (v, f) => (v == null ? '—' : f(v))
+  const change = (a, b) => (a == null || b == null || !a ? '' : ` <b class="${b <= a ? 'acento' : ''}">${b <= a ? '−' : '+'}${Math.abs(Math.round(100 * (1 - b / a)))}%</b>`)
   const maxDay = Math.max(...c.porDia.map((d) => d.costo), 0.01)
   const maxProj = Math.max(...c.porProyecto.map((p) => p.costo), 0.01)
   const maxGroup = Math.max(...c.gruposHerramientas.map((g) => g.tokens), 1)
@@ -379,10 +408,11 @@ function paintUsage(c) {
       <div class="cifra ahorro-cifra"><div class="etiqueta">${t('usage.cacheSaved')}</div><div class="valor">≈ ${usd(T.ahorroCacheUsd)}</div><div class="detalle-cifra">${t('usage.cacheNote')}</div></div>
       <div class="cifra ahorro-cifra"><div class="etiqueta">${t('usage.codeSaved')}</div><div class="valor">≈ ${big(saved)}</div><div class="detalle-cifra">${t('usage.codeNote', { n: c.sandbox.corridas })}</div></div>
     </div>
+    ${ad ? `<div class="antes-despues-uso tarjeta">${ad.despues.dias ? `<span>${t('usage.since2', { date: esc(shortDate(ad.desde)) })}</span><span>${t('usage.costDay')}: <b>${fmt(ad.despues.costoPorDia, usd)}</b> <span class="tenue">(${t('usage.before')} ${fmt(ad.antes.costoPorDia, usd)})</span>${change(ad.antes.costoPorDia, ad.despues.costoPorDia)}</span><span>${t('usage.toolsAnswer')}: <b>${fmt(ad.despues.herrPorRespuesta, (v) => num(v))}</b> <span class="tenue">(${t('usage.before')} ${fmt(ad.antes.herrPorRespuesta, (v) => num(v))})</span>${change(ad.antes.herrPorRespuesta, ad.despues.herrPorRespuesta)}</span><span class="tenue">${t('usage.daysAfter', { n: ad.despues.dias })}${ad.despues.dias < 5 ? ` · ${t('usage.fewDays')}` : ''}</span>` : `<span>${t('usage.noAfter', { date: esc(shortDate(ad.desde)) })}</span>`}</div>` : ''}
     <div class="con-grilla">
       <div class="tarjeta con-caja">
         <div class="fila entre"><h3>${t('usage.perDay')}</h3><span class="tenue chico-texto">${t('usage.max', { v: usd(maxDay) })}</span></div>
-        <div class="columnas" role="img" aria-label="${t('usage.perDay')}">${c.porDia.map((d) => `<div class="col" data-tip="${esc(shortDate(d.dia))}: ${esc(usd(d.costo))} · ${esc(big(d.tokens))} ${t('tokens')}"><div class="col-barra" style="height:${d.costo ? Math.max(2, (100 * d.costo) / maxDay) : 0}%"></div></div>`).join('')}</div>
+        <div class="columnas" role="img" aria-label="${t('usage.perDay')}">${c.porDia.map((d) => `<div class="col${ad && d.dia === ad.desde ? ' corte' : ''}" data-tip="${esc(shortDate(d.dia))}: ${esc(usd(d.costo))} · ${esc(big(d.tokens))} ${t('tokens')}"><div class="col-barra" style="height:${d.costo ? Math.max(2, (100 * d.costo) / maxDay) : 0}%"></div></div>`).join('')}</div>
         <div class="eje">${c.porDia.map((d, i) => `<span>${i % every === 0 || i === c.porDia.length - 1 ? esc(shortDate(d.dia)) : ''}</span>`).join('')}</div>
       </div>
       <div class="tarjeta con-caja">
@@ -486,17 +516,19 @@ function paintResult(r) {
 }
 
 function paintComparison(c) {
-  const max = Math.max(c.classic.total, c.code.total, 1)
-  const names = { definitions: 'part.definitions', calls: 'part.calls', gateway: 'part.gateway', code: 'part.code', result: 'part.result' }
+  const max = Math.max(c.classic.total, c.deferred?.total ?? 0, c.code.total, 1)
+  const names = { definitions: 'part.definitions', calls: 'part.calls', gateway: 'part.gateway', code: 'part.code', result: 'part.result', names: 'part.names' }
   const side = (cls, name, d, codeSide) => {
     const parts = Object.entries(d.parts).map(([k, v]) => [t(codeSide && k === 'definitions' ? 'part.defsUsed' : names[k]), v])
     return `<div class="lado ${cls}"><div class="cabeza"><span>${name}</span><b>≈ ${num(d.total)} ${t('tokens')}</b></div>
       <div class="pista" style="width:${Math.max(2, (100 * d.total) / max)}%">${parts.filter(([, v]) => v > 0).map(([k, v]) => `<div class="pedazo" data-tip="${esc(k)}: ≈ ${num(v)}" style="width:${(100 * v) / (d.total || 1)}%"></div>`).join('')}</div>
       <ul>${parts.map(([k, v]) => `<li>${esc(k)}: ≈ ${num(v)}</li>`).join('')}</ul></div>`
   }
-  const p = c.classic.total > 0 ? Math.round(100 * (1 - c.code.total / c.classic.total)) : 0
-  return `<div class="comparacion"><p class="ahorro">${p > 0 ? t('sb.saving', { p }) : p < 0 ? t('sb.costMore', { p: -p }) : t('sb.same')}</p>
-    ${side('clasico', t('sb.classic'), c.classic, false)}${side('codigo', t('sb.codeMode'), c.code, true)}</div>`
+  const pct = (base) => (base > 0 ? Math.round(100 * (1 - c.code.total / base)) : 0)
+  const noCalls = !c.classic.parts?.calls
+  const say = (p, key) => (p > 0 ? t(key, { p }) : noCalls ? t('sb.noCalls') : p < 0 ? t('sb.costMore', { p: -p }) : t('sb.same'))
+  return `<div class="comparacion">${noCalls ? `<p class="ahorro">${t('sb.noCalls')}</p>` : `<p class="ahorro">${say(pct(c.classic.total), 'sb.saving')}</p>${c.deferred ? `<p class="tenue chico-texto">${say(pct(c.deferred.total), 'sb.savingDeferred')}</p>` : ''}`}
+    ${side('clasico', t('sb.classic'), c.classic, false)}${c.deferred ? side('clasico diferido', t('sb.deferred'), c.deferred, true) : ''}${side('codigo', t('sb.codeMode'), c.code, true)}</div>`
 }
 
 // ── History ───────────────────────────────────────────────────────────────────────────────────────
@@ -507,13 +539,13 @@ async function loadHistory() {
     $('#hist-lista').innerHTML = `<p class="vacio" style="padding:10px 6px">${t('hist.empty')}</p>`
     return
   }
-  $('#hist-lista').innerHTML = `<table class="historial-tabla"><thead><tr><th>${t('hist.date')}</th><th>${t('hist.source')}</th><th>${t('hist.title2')}</th><th class="num">${t('sb.duration')}</th><th>${t('hist.state')}</th><th class="num">${t('sb.classic')}</th><th class="num">${t('sb.codeMode').split(' (')[0]}</th><th class="num">${t('hist.saving')}</th></tr></thead><tbody>
+  $('#hist-lista').innerHTML = `<table class="historial-tabla"><thead><tr><th>${t('hist.date')}</th><th>${t('hist.source')}</th><th>${t('hist.title2')}</th><th class="num">${t('sb.duration')}</th><th>${t('hist.state')}</th><th class="num">${t('hist.allDefs')}</th><th class="num">${t('hist.deferred')}</th><th class="num">${t('sb.codeMode').split(' (')[0]}</th></tr></thead><tbody>
     ${list.map((h, i) => {
-      const p = h.tokens?.classic ? Math.round(100 * (1 - h.tokens.code / h.tokens.classic)) : null
+      const pc = (base) => (base ? ` <small class="tenue">−${Math.round(100 * (1 - h.tokens.code / base))}%</small>` : '')
       return `<tr class="entrada" data-i="${i}" tabindex="0" aria-expanded="false">
         <td style="white-space:nowrap">${esc(longDate(h.date))}</td><td>${esc(t(`src.${h.source}`))}</td><td>${esc(h.title)}</td><td class="num">${secs(h.ms)}</td>
         <td>${h.ok ? `<span class="pastilla ok">OK</span>` : '<span class="pastilla error">Error</span>'}</td>
-        <td class="num">${h.tokens ? `≈ ${num(h.tokens.classic)}` : '—'}</td><td class="num">${h.tokens ? `≈ ${num(h.tokens.code)}` : '—'}</td><td class="num">${p == null ? '—' : `${p}%`}</td></tr>
+        <td class="num">${h.tokens ? `≈ ${num(h.tokens.classic)}${pc(h.tokens.classic)}` : '—'}</td><td class="num">${h.tokens?.deferred != null ? `≈ ${num(h.tokens.deferred)}${pc(h.tokens.deferred)}` : '—'}</td><td class="num">${h.tokens ? `≈ ${num(h.tokens.code)}` : '—'}</td></tr>
       <tr class="detalle-fila" data-de="${i}" hidden><td colspan="8">
         ${h.ok ? `<b>${t('sb.result')}</b><pre>${esc(h.result)}</pre>` : `<b>Error</b><pre style="color:var(--error)">${esc(h.error)}</pre>`}
         ${h.calls?.length ? `<b>${t('sb.calls')}</b><pre>${esc(h.calls.map((l) => `${l.server}.${l.tool} — ${secs(l.ms)} — ≈ ${l.tokensResult} ${t('tokens')}${l.error ? ' — ERROR' : ''}`).join('\n'))}</pre>` : ''}

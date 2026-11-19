@@ -18,12 +18,13 @@
 
 ---
 
-## Your AI is paying for tools it never uses
+## Two ways MCP wastes tokens
 
-Every MCP server you connect sends **all its tool definitions** into your AI's context, on every
-conversation. Ten servers can mean 100+ tools and tens of thousands of tokens before you type a word.
-Then every tool result lands in the chat **in full** — a whole web page, a 3,000-line document, a giant
-JSON — even when the AI only needed one number.
+1. **Definitions.** Many AI apps (Cursor, VS Code, Claude Desktop…) send **every tool definition** of every
+   server into the context, on every conversation. Ten servers can mean 100+ tools and tens of thousands of
+   tokens before you type a word. *(Claude Code already loads definitions lazily, so there this part is small.)*
+2. **Results — in every app.** Each tool result lands in the chat **in full**: a whole web page, a long
+   document, a giant JSON — even when the AI only needed one number. And it is re-read on every answer after that.
 
 That is slower, more expensive, and leaves less room for the AI to think.
 
@@ -45,17 +46,24 @@ Backed up, and undoable with one click.
 
 ## Measured, not promised
 
-Same task, same servers (context7, memory, everything, sequential-thinking). Classic = what the AI loads and
-receives with normal MCP; Code Mode = the gateway's 3 tools + the code + what it returns.
+Same task, same servers (context7, memory, everything, sequential-thinking), counted three ways:
+**all definitions** = an app that loads every definition (Cursor, VS Code, Claude Desktop…);
+**deferred** = an app that loads only tool names and fetches a definition when used (Claude Code);
+**Code Mode** = the gateway's 3 tools + the code + what it returns. Tokens ≈ 3.5 characters each.
 
-| Task | Classic MCP | Code Mode | Saved |
+| Task | All definitions | Deferred (Claude Code) | Code Mode |
 |---|---:|---:|---:|
-| Look up docs and keep only the relevant lines (2 calls) | ≈ 8,049 tokens | ≈ 2,272 | **72%** |
-| Several calls, one small answer (4 calls) | ≈ 6,772 | ≈ 1,154 | **83%** |
-| Check a web page on mobile (browser in code) | ≈ 6,490 | ≈ 624 | **90%** |
+| Look up docs, keep only the relevant lines (2 calls) | ≈ 8,049 | ≈ 3,273 | **≈ 2,272** (−72% / −31%) |
+| Read a large graph + docs, return a summary (2 calls) | ≈ 8,373 | ≈ 3,069 | **≈ 1,601** (−81% / −48%) |
+| Check a web page (vs a browser MCP that returns the page snapshot)¹ | ≈ 7,000 | ≈ 3,400 | **≈ 210** (−97% / −94%) |
+| Four calls with tiny results | ≈ 6,772 | ≈ 1,149 | ≈ 1,154 (−83% / **0%**) |
 
-The more servers you have and the bigger their results, the bigger the saving. The panel measures every
-run, so you can see it on your own tools.
+¹ Approximate: a typical page snapshot weighs ≈ 3,000 tokens per step.
+
+**Honest summary:** in apps that load every definition, Code Mode saves a lot almost always. In Claude Code the
+saving comes from **results**: big outputs (pages, documents, long lists) shrink a lot; tiny results don't change.
+The panel measures every run both ways, and the **Usage** tab compares your real daily usage before and after you
+set it up.
 
 ## How it works
 
@@ -155,6 +163,14 @@ page. Same panel, in its own window; it still needs Node.js 20+. They are not co
 Control or macOS Gatekeeper may block or warn. `npx` does exactly the same without an installer.
 </details>
 
+## Remote servers with sign-in
+
+Remote MCP servers that ask you to sign in (OAuth) work behind the gateway. After Setup or `add`, open
+**Inventory → the server → Sign in**: your browser opens the server's login page and comes back to the panel.
+The session is kept in `~/.code-mode-mcp/oauth/` and the gateway renews it by itself. This needs servers that
+follow the MCP sign-in standard (dynamic client registration); servers that require a pre-registered app must
+stay direct.
+
 ## FAQ
 
 **Does my AI get worse at using tools?**
@@ -179,6 +195,20 @@ They live in your claude.ai account and cannot be moved to a local gateway.
 **How accurate are the numbers?**
 Token counts are estimates (≈ 3.5 characters per token) — good for comparing, not for billing. The Usage
 cost comes from Claude Code's own logs.
+
+## Credits and prior art
+
+The idea is not ours: **code mode** was described by [Cloudflare](https://blog.cloudflare.com/code-mode/) and by
+Anthropic in [Code execution with MCP](https://www.anthropic.com/engineering/code-execution-with-mcp), and MCP
+gateways and proxies already exist. What this project adds is the packaging: one-click setup across six AI apps
+with backups and undo, a local panel to see where your tokens go, browser and Blender helpers, and English and
+Spanish docs.
+
+## Limits
+
+- Remote MCP servers that require signing in (OAuth): see *Remote servers with sign-in* below.
+- Token counts are estimates. Usage cost comes from Claude Code's own logs and only covers Claude Code.
+- The AI has to write a little code. Current models do it well, but sometimes still prefer direct calls.
 
 ## Requirements
 

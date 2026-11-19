@@ -6,7 +6,8 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { spawn } from 'node:child_process'
 import { APP_DIR, PATHS, PORT, ensureHome, readJson, writeJson, loadServers, loadSettings, saveSettings } from './lib/config.mjs'
-import { inspect } from './lib/mcp.mjs'
+import { inspect, startSignIn, finishSignIn } from './lib/mcp.mjs'
+import { signedIn, signOut } from './lib/oauth.mjs'
 import { detect, CLIENTS, listSkills } from './lib/clients.mjs'
 import { plan, apply, undo, status } from './lib/setup.mjs'
 import { Runner, setGatewayTokens } from './lib/runner.mjs'
@@ -34,6 +35,7 @@ async function buildInventory() {
   // Feed the gateway's catalog so search_tools is instant
   const catalog = readJson(path.join(PATHS.cache, 'catalog.json'), {})
   for (const p of panel) {
+    if (p.type !== 'stdio') p.signedIn = signedIn(p.name)
     if (p.state === 'connected') catalog[p.name] = runner.catalog[p.name] = { at: Date.now(), tools: p.schemas }
     delete p.schemas
   }
@@ -119,11 +121,23 @@ const routes = {
   },
   'POST /api/shortcut': () => createShortcuts(stableAppDir()),
   'DELETE /api/shortcut': () => removeShortcuts(),
+  'POST /api/oauth/start': async (req) => {
+    const { server } = await body(req)
+    const s = loadServers()[server]
+    if (!s || s.type === 'stdio') throw new Error('Not a remote server in the panel')
+    return startSignIn(server, s)
+  },
+  'POST /api/oauth/signout': async (req) => {
+    const { server } = await body(req)
+    signOut(server)
+    buildInventory().catch(() => {})
+    return { ok: true }
+  },
   'GET /api/history': () => readJson(PATHS.history, []),
   'DELETE /api/history': () => (writeJson(PATHS.history, []), { ok: true }),
   'GET /api/usage': (req, url) => {
     const d = Number(url.searchParams.get('days'))
-    return usage({ days: [0, 7, 30].includes(d) ? d : 30, history: readJson(PATHS.history, []) })
+    return usage({ days: [0, 7, 30].includes(d) ? d : 30, history: readJson(PATHS.history, []), since: status().at })
   },
   'GET /api/examples': () => {
     const dir = path.join(APP_DIR, 'examples')
@@ -144,6 +158,26 @@ export function startPanel({ open = true, app = false } = {}) {
     }
     const url = new URL(req.url, `http://${req.headers.host}`)
     try {
+      // The browser comes back here after signing in to a remote MCP server
+      if (url.pathname.startsWith('/oauth/callback/')) {
+        const name = decodeURIComponent(url.pathname.slice('/oauth/callback/'.length))
+        const s = loadServers()[name]
+        let ok = false
+        let msg
+        try {
+          if (!s) throw new Error('Unknown server')
+          if (url.searchParams.get('error')) throw new Error(url.searchParams.get('error_description') || url.searchParams.get('error'))
+          const r = await finishSignIn(name, s, url.searchParams.get('code'))
+          ok = true
+          msg = `Signed in to ${name} (${r.tools} tools). You can close this window.`
+          buildInventory().catch(() => {})
+        } catch (e) {
+          msg = `Could not sign in to ${name}: ${String(e?.message ?? e).slice(0, 300)}`
+        }
+        res.writeHead(ok ? 200 : 400, { 'content-type': 'text/html; charset=utf-8' })
+        const safe = msg.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
+        return res.end(`<!doctype html><meta charset="utf-8"><title>Code Mode MCP</title><body style="font:16px system-ui;display:grid;place-items:center;height:90vh;color:${ok ? '#2f7a4b' : '#b23b35'}"><p>${safe}</p><script>setTimeout(() => window.close(), 2500)</script>`)
+      }
       if (url.pathname.startsWith('/api/')) {
         if (req.method !== 'GET' && !ownRequest(req)) return json(res, 403, { error: 'Not allowed' })
         const fn = routes[`${req.method} ${url.pathname}`]

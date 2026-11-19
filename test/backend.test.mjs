@@ -83,7 +83,7 @@ test('the gateway lists 3 tools, searches and runs code against a moved server',
     }, undefined, { timeout: 180000 })
     assert.equal(run.isError, false, run.content[0].text)
     assert.match(run.content[0].text, /"hasReact": true/)
-    assert.match(run.content[0].text, /with classic MCP/)
+    assert.match(run.content[0].text, /calling the tools directly/)
     const bad = await client.callTool({ name: 'run_code', arguments: { code: "return require('fs')" } })
     assert.equal(bad.isError, true, 'no require inside run_code')
   } finally {

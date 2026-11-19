@@ -10,7 +10,7 @@
   "scripts": {
     "start": "node bin/code-mode-mcp.mjs",
     "gateway": "node bin/code-mode-mcp.mjs gateway",
-    "test": "node --test test/backend.test.mjs"
+    "test": "node --test test/backend.test.mjs test/oauth.test.mjs"
   },
   "files": [
     "bin",

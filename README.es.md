@@ -18,12 +18,14 @@
 
 ---
 
-## Tu IA está pagando por herramientas que nunca usa
+## Dos formas en que MCP desperdicia tokens
 
-Cada servidor MCP que conectas mete **todas las definiciones de sus herramientas** en el contexto de tu IA, en
-cada conversación. Diez servidores pueden ser más de 100 herramientas y decenas de miles de tokens antes de que
-escribas una palabra. Y cada resultado entra **completo** a la conversación: una página web entera, un
-documento de 3.000 líneas, un JSON gigante… aunque la IA solo necesitara un número.
+1. **Definiciones.** Muchas apps de IA (Cursor, VS Code, Claude Desktop…) meten **todas las definiciones** de
+   todos los servidores en el contexto, en cada conversación. Diez servidores pueden ser más de 100 herramientas y
+   decenas de miles de tokens antes de que escribas una palabra. *(Claude Code ya carga las definiciones de forma
+   diferida, así que ahí esta parte es chica.)*
+2. **Resultados, en todas las apps.** Cada resultado entra **completo** a la conversación: una página web entera,
+   un documento largo, un JSON gigante… aunque la IA solo necesitara un número. Y se vuelve a leer en cada respuesta.
 
 Eso es más lento, más caro y le deja menos espacio a la IA para pensar.
 
@@ -45,17 +47,24 @@ respaldo y se deshace con un clic.
 
 ## Medido, no prometido
 
-La misma tarea con los mismos servidores (context7, memory, everything, sequential-thinking). Clásico = lo que la
-IA carga y recibe con MCP normal; Code Mode = las 3 herramientas de la puerta + el código + lo que devuelve.
+La misma tarea con los mismos servidores (context7, memory, everything, sequential-thinking), contada de tres formas:
+**todas las definiciones** = una app que las carga todas (Cursor, VS Code, Claude Desktop…);
+**diferida** = una app que carga solo los nombres y trae la definición al usarla (Claude Code);
+**Code Mode** = las 3 herramientas de la puerta + el código + lo que devuelve. Tokens ≈ 3,5 caracteres cada uno.
 
-| Tarea | MCP clásico | Code Mode | Ahorro |
+| Tarea | Todas las definiciones | Diferida (Claude Code) | Code Mode |
 |---|---:|---:|---:|
-| Buscar documentación y quedarse con lo útil (2 llamadas) | ≈ 8.049 tokens | ≈ 2.272 | **72%** |
-| Varias llamadas, una respuesta chica (4 llamadas) | ≈ 6.772 | ≈ 1.154 | **83%** |
-| Revisar una página web en celular (navegador por código) | ≈ 6.490 | ≈ 624 | **90%** |
+| Buscar documentación y quedarse con lo útil (2 llamadas) | ≈ 8.049 | ≈ 3.273 | **≈ 2.272** (−72% / −31%) |
+| Leer un grafo grande + documentación y resumir (2 llamadas) | ≈ 8.373 | ≈ 3.069 | **≈ 1.601** (−81% / −48%) |
+| Revisar una página web (contra un MCP de navegador que devuelve la página)¹ | ≈ 7.000 | ≈ 3.400 | **≈ 210** (−97% / −94%) |
+| Cuatro llamadas con resultados chiquitos | ≈ 6.772 | ≈ 1.149 | ≈ 1.154 (−83% / **0%**) |
 
-Mientras más servidores tengas y más grandes sean sus resultados, más ahorras. El panel mide cada corrida,
-así que lo ves con tus propias herramientas.
+¹ Aproximado: el resumen típico de una página pesa ≈ 3.000 tokens por paso.
+
+**Resumen honesto:** en apps que cargan todas las definiciones, Code Mode ahorra mucho casi siempre. En Claude Code
+el ahorro viene de los **resultados**: lo grande (páginas, documentos, listas largas) se achica mucho; lo chiquito
+no cambia. El panel mide cada corrida de las dos formas, y la pestaña **Consumo** compara tu uso real por día antes y
+después de activarlo.
 
 ## Cómo funciona
 
@@ -153,6 +162,14 @@ Es el mismo panel en su propia ventana; igual necesita Node.js 20+. No tienen fi
 Control de Windows o Gatekeeper de macOS pueden bloquearlos o advertir. `npx` hace exactamente lo mismo sin instalador.
 </details>
 
+## Servidores remotos con inicio de sesión
+
+Los servidores MCP remotos que piden iniciar sesión (OAuth) funcionan detrás de la puerta. Después del Setup o de
+`add`, abre **Inventario → el servidor → Iniciar sesión**: tu navegador abre la página de inicio de sesión del
+servidor y vuelve al panel. La sesión queda en `~/.code-mode-mcp/oauth/` y la puerta la renueva sola. Requiere
+servidores que sigan el estándar de inicio de sesión de MCP (registro dinámico de clientes); los que exigen una app
+registrada de antemano tienen que quedar directos.
+
 ## Preguntas frecuentes
 
 **¿Mi IA usa peor las herramientas?**
@@ -177,6 +194,20 @@ Viven en tu cuenta de claude.ai y no se pueden pasar a una puerta local.
 **¿Qué tan exactos son los números?**
 Los tokens son estimados (≈ 3,5 caracteres por token): sirven para comparar, no para facturar. El costo de
 Consumo viene de los registros de Claude Code.
+
+## Créditos e ideas previas
+
+La idea no es nuestra: el **modo código** lo describieron [Cloudflare](https://blog.cloudflare.com/code-mode/) y
+Anthropic en [Code execution with MCP](https://www.anthropic.com/engineering/code-execution-with-mcp), y ya existen
+puertas y proxies de MCP. Lo que aporta este proyecto es el paquete: un botón que lo configura en seis apps de IA
+con respaldo y Deshacer, un panel local para ver en qué se van tus tokens, ayudantes de navegador y Blender, y
+documentación en español e inglés.
+
+## Límites
+
+- Servidores MCP remotos que piden iniciar sesión (OAuth): ver *Servidores remotos con inicio de sesión* más abajo.
+- Los tokens son estimados. El costo de Consumo viene de los registros de Claude Code y solo cubre Claude Code.
+- La IA tiene que escribir un poco de código. Los modelos actuales lo hacen bien, pero a veces prefieren llamar directo.
 
 ## Requisitos
 

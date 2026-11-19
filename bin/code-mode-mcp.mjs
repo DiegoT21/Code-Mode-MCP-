@@ -131,11 +131,11 @@ switch (cmd) {
       if (!process.env[n]) missing.push(n)
     }
     const r = await inspect(name, s)
-    if (r.state !== 'connected' && !missing.length && !flag('force')) print({ ok: false, error: 'The server did not answer; not added. Use --force to add it anyway.', reason: r.reason }, 1)
+    if (r.state !== 'connected' && !r.needsSignIn && !missing.length && !flag('force')) print({ ok: false, error: 'The server did not answer; not added. Use --force to add it anyway.', reason: r.reason }, 1)
     servers[name] = s
     saveServers(servers)
     appendLog(PATHS.installs, { action: 'add-mcp', name, server: safeView(name, s), tools: r.tools.length, tokens: r.tokensTotal })
-    print({ ok: true, added: name, tools: r.tools.length, tokensIfLoadedDirectly: r.tokensTotal, ...(missing.length && { missingValues: missing, note: `Put the values in ${PATHS.servers} → ${name} → env` }) })
+    print({ ok: true, added: name, tools: r.tools.length, tokensIfLoadedDirectly: r.tokensTotal, ...(r.needsSignIn && { signIn: 'This server asks you to sign in: open the panel → Inventory → ' + name + ' → Sign in.' }), ...(missing.length && { missingValues: missing, note: `Put the values in ${PATHS.servers} → ${name} → env` }) })
     break
   }
 
