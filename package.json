@@ -1,6 +1,6 @@
 {
   "name": "code-mode-mcp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "One MCP for all your MCPs: a local panel + gateway that lets your AI call tools through code and spend far fewer tokens.",
   "type": "module",
   "bin": {
