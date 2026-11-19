@@ -18,4 +18,6 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
+      - name: Download the MCP server used by the tests
+        run: npm cache add @upstash/context7-mcp
       - run: npm test
