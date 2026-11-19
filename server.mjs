@@ -13,6 +13,8 @@ import { Runner, setGatewayTokens } from './lib/runner.mjs'
 import { usage } from './lib/usage.mjs'
 import { findBlender, listScenes } from './lib/blender.mjs'
 import { tokens } from './lib/tokens.mjs'
+import { openAppWindow, createShortcuts, removeShortcuts } from './lib/appwindow.mjs'
+import { stableAppDir } from './lib/setup.mjs'
 import { TOOLS as GATEWAY_TOOLS } from './lib/gateway.mjs'
 import { toolCost } from './lib/mcp.mjs'
 
@@ -93,7 +95,7 @@ const localHost = (req) => [`localhost:${PORT}`, `127.0.0.1:${PORT}`, `[::1]:${P
 const ownRequest = (req) => req.headers['x-panel'] === '1' && (!req.headers.origin || [`http://localhost:${PORT}`, `http://127.0.0.1:${PORT}`].includes(req.headers.origin))
 
 const routes = {
-  'GET /api/state': () => ({ setup: status(), settings: loadSettings(), panelServers: Object.keys(loadServers()).length, gatewayTokens: GATEWAY_TOOLS.reduce((a, x) => a + toolCost(x), 0) }),
+  'GET /api/state': () => ({ platform: process.platform, setup: status(), settings: loadSettings(), panelServers: Object.keys(loadServers()).length, gatewayTokens: GATEWAY_TOOLS.reduce((a, x) => a + toolCost(x), 0) }),
   'GET /api/inventory': (req, url) => getInventory(url.searchParams.has('refresh')),
   'GET /api/setup/plan': () => plan(),
   'POST /api/setup/apply': async (req) => {
@@ -115,6 +117,8 @@ const routes = {
     if (typeof b.code !== 'string') throw new Error('Missing code')
     return runner.run(b.code, { source: 'panel', title: b.title || undefined, timeoutMs: 240000 })
   },
+  'POST /api/shortcut': () => createShortcuts(stableAppDir()),
+  'DELETE /api/shortcut': () => removeShortcuts(),
   'GET /api/history': () => readJson(PATHS.history, []),
   'DELETE /api/history': () => (writeJson(PATHS.history, []), { ok: true }),
   'GET /api/usage': (req, url) => {
@@ -131,7 +135,7 @@ const routes = {
   },
 }
 
-export function startPanel({ open = true } = {}) {
+export function startPanel({ open = true, app = false } = {}) {
   ensureHome()
   const server = http.createServer(async (req, res) => {
     if (!localHost(req)) {
@@ -175,14 +179,24 @@ export function startPanel({ open = true } = {}) {
     server.once('error', (e) => {
       if (e.code === 'EADDRINUSE') {
         console.log(`Code Mode MCP is already running: http://localhost:${PORT}`)
-        if (open) openBrowser(`http://localhost:${PORT}`)
+        if (app) openAppWindow(`http://localhost:${PORT}`)?.unref()
+        else if (open) openBrowser(`http://localhost:${PORT}`)
         return resolve(null)
       }
       reject(e)
     })
     server.listen(PORT, '127.0.0.1', () => {
       console.log(`Code Mode MCP panel: http://localhost:${PORT}  (Ctrl+C to stop)`)
-      if (open) openBrowser(`http://localhost:${PORT}`)
+      const url = `http://localhost:${PORT}`
+      if (app) {
+        // App window: when the user closes it, the panel stops too (if this process started it)
+        const win = openAppWindow(url)
+        if (!win) openBrowser(url)
+        else {
+          const t0 = Date.now()
+          win.on('exit', () => Date.now() - t0 > 5000 && process.exit(0))
+        }
+      } else if (open) openBrowser(url)
       getInventory(false).catch(() => {})
       resolve(server)
     })

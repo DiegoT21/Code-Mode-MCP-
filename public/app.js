@@ -115,6 +115,7 @@ function paintSetup() {
         <div class="clientes desplazable">${found.length ? clientRows : `<p class="nota">${t('setup.noneFound')}</p>${clientRows}`}</div>
       </div>
       <div class="setup-der">
+        ${state?.platform === 'win32' ? `<div class="tarjeta"><h3>${t('setup.appTitle')}</h3><p class="tenue chico-texto" style="margin:4px 0 10px">${t('setup.appText')}</p><button id="atajo" class="boton secundario chico" type="button">${t('setup.appButton')}</button></div>` : ''}
         <div class="tarjeta accion">
           <div class="antes-despues">
             <div><div class="etiqueta">${t('setup.before')}</div><div class="valor">${movable.length} MCP</div><div class="tenue chico-texto">${t('setup.allTools')}</div></div>
@@ -146,6 +147,7 @@ function paintSetup() {
   $('#setup-aplicar').addEventListener('click', applySetup)
   $('#setup-deshacer')?.addEventListener('click', undoSetup)
   $('#blender-guardar').addEventListener('click', saveBlender)
+  $('#atajo')?.addEventListener('click', makeShortcut)
 }
 const process_hint = () => (navigator.platform.startsWith('Win') ? 'C:\\Program Files\\Blender Foundation\\Blender 4.x\\blender.exe' : '/Applications/Blender.app/Contents/MacOS/Blender')
 
@@ -172,6 +174,16 @@ async function undoSetup() {
   setupMessage = t('setup.undone')
   await loadSetup()
   loadInventory(true)
+}
+async function makeShortcut(e) {
+  const b = e.currentTarget
+  b.disabled = true
+  try {
+    const r = await api('/api/shortcut', { method: 'POST' })
+    b.textContent = r.ok ? t('setup.appDone') : r.error
+  } catch (err) {
+    b.textContent = err.message
+  }
 }
 async function saveBlender(e) {
   const body = { blenderScenes: $('#blender-escenas').value.trim() }

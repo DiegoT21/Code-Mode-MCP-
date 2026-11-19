@@ -2,6 +2,8 @@
 // Code Mode MCP — command line.
 //
 //   code-mode-mcp                         open the panel (http://localhost:4777)
+//   code-mode-mcp --app                   open it in its own window (Edge/Chrome app mode)
+//   code-mode-mcp shortcut [--remove]     desktop + Start menu shortcut that opens it as an app (Windows)
 //   code-mode-mcp gateway                 run the MCP gateway on stdio (this is what AI clients start)
 //   code-mode-mcp setup                   show what Setup would move
 //   code-mode-mcp setup --apply           move every MCP server of every AI client into the panel
@@ -22,7 +24,11 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-const [cmd = 'open', ...rest] = process.argv.slice(2)
+let [cmd = 'open', ...rest] = process.argv.slice(2)
+if (cmd.startsWith('--')) {
+  rest = [cmd, ...rest]
+  cmd = 'open'
+}
 const WITH_VALUE = new Set(['--config', '--config-file', '--env', '--screen', '--screenshot', '--days', '--port', '--name'])
 const opt = (n) => {
   const i = rest.indexOf(`--${n}`)
@@ -55,7 +61,22 @@ switch (cmd) {
   case 'panel': {
     if (opt('port')) process.env.CODE_MODE_PORT = opt('port')
     const { startPanel } = await import('../server.mjs')
-    await startPanel({ open: !flag('no-open') })
+    await startPanel({ open: !flag('no-open'), app: flag('app') })
+    break
+  }
+
+  case 'launch': {
+    // Used by the shortcut: start the panel in the background (no console) and quit
+    const { launchDetached } = await import('../lib/appwindow.mjs')
+    launchDetached()
+    process.exit(0)
+  }
+
+  case 'shortcut': {
+    const a = await import('../lib/appwindow.mjs')
+    if (flag('remove')) print(a.removeShortcuts())
+    const { stableAppDir } = await import('../lib/setup.mjs')
+    print(a.createShortcuts(stableAppDir()))
     break
   }
 

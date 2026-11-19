@@ -126,7 +126,8 @@ Changed your mind? **Setup → Undo everything** puts every server back where it
 
 | Command | |
 |---|---|
-| `code-mode-mcp` | Open the panel |
+| `code-mode-mcp` | Open the panel (`--app` for its own window) |
+| `shortcut` · `shortcut --remove` | Desktop and Start menu shortcut that opens it as an app (Windows) |
 | `setup` · `setup --apply` · `setup --undo` | The Setup button, from the terminal |
 | `add <name> --config '<json>' [--env NAME]` | Test a server and add it behind the gateway. Keys come from your terminal with `--env`, never from the command line |
 | `remove <name>` | Remove a server (backup kept) |
@@ -144,7 +145,12 @@ Use them as `npx github:DiegoT21/Code-Mode-MCP- <command>`, or install once with
 <details>
 <summary><b>Desktop app</b></summary>
 
-Installers for Windows, macOS and Linux are on the [Releases](https://github.com/DiegoT21/Code-Mode-MCP-/releases/latest)
+**No installer (recommended on Windows):** press **Setup → Create shortcut**, or run
+`npx github:DiegoT21/Code-Mode-MCP- shortcut`. You get a *Code Mode MCP* shortcut on the desktop and in the Start
+menu that opens the panel in its own window (Edge/Chrome app mode, no console) and stops it when you close the
+window. On any system, `code-mode-mcp --app` opens that window.
+
+**Installers** for Windows, macOS and Linux are on the [Releases](https://github.com/DiegoT21/Code-Mode-MCP-/releases/latest)
 page. Same panel, in its own window; it still needs Node.js 20+. They are not code-signed, so Windows Smart App
 Control or macOS Gatekeeper may block or warn. `npx` does exactly the same without an installer.
 </details>

@@ -124,7 +124,8 @@ npx github:DiegoT21/Code-Mode-MCP-
 
 | Comando | |
 |---|---|
-| `code-mode-mcp` | Abre el panel |
+| `code-mode-mcp` | Abre el panel (`--app` en su propia ventana) |
+| `shortcut` · `shortcut --remove` | Acceso directo en escritorio y menú Inicio que lo abre como app (Windows) |
 | `setup` · `setup --apply` · `setup --undo` | El botón de Setup, desde la terminal |
 | `add <nombre> --config '<json>' [--env NOMBRE]` | Prueba un servidor y lo agrega detrás de la puerta. Las claves vienen de tu terminal con `--env`, nunca del comando |
 | `remove <nombre>` | Quita un servidor (queda respaldo) |
@@ -142,7 +143,12 @@ npx github:DiegoT21/Code-Mode-MCP-
 <details>
 <summary><b>App de escritorio</b></summary>
 
-Los instaladores para Windows, macOS y Linux están en [Releases](https://github.com/DiegoT21/Code-Mode-MCP-/releases/latest).
+**Sin instalador (lo recomendado en Windows):** pulsa **Setup → Crear acceso directo** o corre
+`npx github:DiegoT21/Code-Mode-MCP- shortcut`. Queda un acceso directo *Code Mode MCP* en el escritorio y el menú
+Inicio que abre el panel en su propia ventana (modo app de Edge o Chrome, sin consola) y lo apaga al cerrarla. En
+cualquier sistema, `code-mode-mcp --app` abre esa ventana.
+
+**Instaladores** para Windows, macOS y Linux están en [Releases](https://github.com/DiegoT21/Code-Mode-MCP-/releases/latest).
 Es el mismo panel en su propia ventana; igual necesita Node.js 20+. No tienen firma digital, así que Smart App
 Control de Windows o Gatekeeper de macOS pueden bloquearlos o advertir. `npx` hace exactamente lo mismo sin instalador.
 </details>
