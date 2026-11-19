@@ -63,19 +63,24 @@ test('apply moves the servers into the panel and leaves only the gateway', () =>
   assert.ok(Object.keys(reg).some((n) => n.startsWith('context7-')), 'a different config with the same name gets its own entry')
 })
 
-test('the gateway lists 3 tools, searches and runs code against a moved server', { timeout: 180000 }, async () => {
+test('the gateway lists 3 tools, searches and runs code against a moved server', { timeout: 300000 }, async () => {
   const gw = readFile('claude-code').mcpServers['code-mode']
   const client = new Client({ name: 'test', version: '1' })
   await client.connect(new StdioClientTransport({ command: gw.command, args: gw.args, env: { ...process.env, ...env }, stderr: 'pipe' }))
   try {
     const { tools } = await client.listTools()
     assert.deepEqual(tools.map((t) => t.name), ['search_tools', 'describe_tool', 'run_code'])
-    const search = await client.callTool({ name: 'search_tools', arguments: { query: 'library docs' } })
+    // The first run may download the servers with npx (slow on a fresh machine): search until they answer
+    let search
+    for (let i = 0; i < 8; i++) {
+      search = await client.callTool({ name: 'search_tools', arguments: { query: 'library docs' } }, undefined, { timeout: 120000 })
+      if (!/stillLoading/.test(search.content[0].text)) break
+    }
     assert.match(search.content[0].text, /context7/)
     const run = await client.callTool({
       name: 'run_code',
       arguments: { code: "const r = await mcp.call('context7', 'resolve-library-id', { libraryName: 'react', query: 'hooks' }); return { chars: String(r).length, hasReact: /react/i.test(String(r)) }" },
-    })
+    }, undefined, { timeout: 180000 })
     assert.equal(run.isError, false, run.content[0].text)
     assert.match(run.content[0].text, /"hasReact": true/)
     assert.match(run.content[0].text, /with classic MCP/)
