@@ -153,7 +153,7 @@ switch (cmd) {
 
   case 'skill-add':
   case 'skill-remove': {
-    const { CLIENTS } = await import('../lib/clients.mjs')
+    const { CLIENTS, skillDescription } = await import('../lib/clients.mjs')
     const { appendLog, PATHS } = await import('../lib/config.mjs')
     const { tokens } = await import('../lib/tokens.mjs')
     const dir = CLIENTS.find((c) => c.id === 'claude-code').skills
@@ -173,7 +173,7 @@ switch (cmd) {
     if (!fs.existsSync(md)) fail(`Not found: ${md}`)
     const text = fs.readFileSync(md, 'utf8')
     const fm = text.match(/^---\r?\n([\s\S]*?)\r?\n---/)?.[1]
-    const description = fm?.match(/^description:\s*(.+)$/m)?.[1]?.trim()
+    const description = skillDescription(fm ?? '')
     if (!description) fail('SKILL.md needs a front matter with "description:" (that is how the AI knows when to use it)')
     const name = opt('name') ?? fm.match(/^name:\s*(.+)$/m)?.[1]?.trim() ?? path.basename(isFile ? path.dirname(src) : src)
     if (!/^[\w.-]+$/.test(name)) fail(`Invalid skill name: ${name}`)
