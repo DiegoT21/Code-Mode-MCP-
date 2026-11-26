@@ -373,3 +373,47 @@ code.ruta { display: block; font-size: 11.5px; color: var(--tenue); background: 
 .antes-despues-uso { display: flex; flex-wrap: wrap; gap: 6px 22px; align-items: center; padding: 10px 16px; font-size: 13.5px; background: var(--acento-suave); border-color: transparent; }
 .col.corte { position: relative; }
 .col.corte::before { content: ''; position: absolute; left: -2px; top: 0; bottom: 0; border-left: 2px dashed var(--aviso); }
+
+/* ── ?theme=glass: dark, elevated glass (when an app such as IA Logistics embeds the panel) ───────── */
+html.glass {
+  --fondo: #0b1020;
+  --lateral: rgba(12, 17, 34, 0.55);
+  --superficie: rgba(255, 255, 255, 0.06);
+  --superficie-2: rgba(255, 255, 255, 0.09);
+  --borde: rgba(255, 255, 255, 0.10);
+  --texto: #e8ecf6;
+  --tenue: #9aa5bb;
+  --acento: #ff6b7a;
+  --acento-suave: rgba(255, 107, 122, 0.16);
+  --clasico: #fbbf77;
+  --clasico-suave: rgba(251, 191, 119, 0.14);
+  --ok: #4ade80;
+  --ok-suave: rgba(74, 222, 128, 0.14);
+  --aviso: #fbbf24;
+  --aviso-suave: rgba(251, 191, 36, 0.14);
+  --error: #f87171;
+  --error-suave: rgba(248, 113, 113, 0.15);
+  --vidrio-sombra: 0 16px 36px rgba(0, 0, 0, 0.42), 0 2px 6px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  color-scheme: dark;
+}
+html.glass body {
+  background:
+    radial-gradient(620px 440px at -8% -12%, rgba(255, 75, 92, 0.20), transparent 62%),
+    radial-gradient(620px 460px at 108% 0%, rgba(80, 120, 255, 0.22), transparent 62%),
+    radial-gradient(700px 480px at 50% 122%, rgba(139, 92, 246, 0.18), transparent 62%),
+    linear-gradient(160deg, #0e1428, #090d1a);
+}
+html.glass .lateral { backdrop-filter: blur(24px) saturate(150%); border-right-color: rgba(255, 255, 255, 0.08); box-shadow: 8px 0 30px rgba(0, 0, 0, 0.25); }
+html.glass .tarjeta,
+html.glass .con-cifras .cifra { backdrop-filter: blur(22px) saturate(150%); box-shadow: var(--vidrio-sombra); }
+html.glass .pestanas button[aria-selected='true'],
+html.glass .segmentos input:checked + span,
+html.glass .idioma button[aria-pressed='true'] { background: rgba(255, 255, 255, 0.11); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.10); }
+html.glass .boton { background: linear-gradient(180deg, #ff6b7a, #e11d48); color: #fff; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.40), inset 0 1px 0 rgba(255, 255, 255, 0.22); }
+html.glass .boton.secundario { background: rgba(255, 255, 255, 0.07); color: var(--texto); border-color: rgba(255, 255, 255, 0.12); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 4px 12px rgba(0, 0, 0, 0.25); }
+html.glass .boton.peligro { color: var(--error); }
+html.glass input[type='text'], html.glass select, html.glass textarea { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.12); }
+html.glass select option { background: #151b2e; }
+html.glass thead th { background: #131a2e; }
+html.glass ::-webkit-scrollbar { width: 10px; height: 10px; }
+html.glass ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.12); border-radius: 10px; border: 3px solid transparent; background-clip: padding-box; }

@@ -6,6 +6,10 @@
   <title>Code Mode MCP</title>
   <link rel="icon" href="logo.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="styles.css" />
+  <script>
+    // ?theme=glass: dark glass look, used when another app embeds the panel (e.g. IA Logistics)
+    if (new URLSearchParams(location.search).get('theme') === 'glass') document.documentElement.classList.add('glass')
+  </script>
 </head>
 <body>
   <div class="app">
